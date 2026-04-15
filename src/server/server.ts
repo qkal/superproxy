@@ -128,12 +128,12 @@ export class ProxyServer {
 
     if (this.#server) {
       // Stop accepting new connections
-      this.#server.stop()
+      await this.#server.stop()
 
-      // Wait for drain timeout to let existing requests complete
-      const drainTimeoutMs = this.#config.server.drainTimeoutMs
+      // Wait for drain timeout to let existing requests complete (capped at 5s to avoid excessive shutdown times)
+      const drainTimeoutMs = Math.min(this.#config.server.drainTimeoutMs, 5000)
       this.#logger.info({ drainTimeoutMs }, 'Waiting for connections to drain...')
-      await new Promise((resolve) => setTimeout(resolve, Math.min(drainTimeoutMs, 1000)))
+      await new Promise((resolve) => setTimeout(resolve, drainTimeoutMs))
 
       this.#logger.info('SuperProxy server stopped')
     }
@@ -245,7 +245,8 @@ export class ProxyServer {
     let body: unknown
     try {
       body = await req.json()
-    } catch {
+    } catch (e) {
+      this.#logger.warn({ error: e }, 'Failed to parse request body')
       const error: ProxyError = {
         kind: 'request_invalid',
         issues: [{ message: 'Invalid JSON body', path: [] } as any],
@@ -417,7 +418,10 @@ export class ProxyServer {
       } else {
         // Buffered response
         const { response } = createBufferedResponse(chunks)
-        const result = await response
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Response buffering timeout')), timeoutMs)
+        })
+        const result = await Promise.race([response, timeoutPromise])
         return { body: JSON.stringify(result) }
       }
     } finally {
