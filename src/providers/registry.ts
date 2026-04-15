@@ -27,6 +27,15 @@ export class ProviderRegistry {
     return this.#breakers.get(id)
   }
 
+  // Expose maps for Router construction
+  get adapters(): Map<string, ProviderAdapter> {
+    return this.#adapters
+  }
+
+  get breakers(): Map<string, CircuitBreaker> {
+    return this.#breakers
+  }
+
   list(): Array<{ id: string; adapter: ProviderAdapter; breaker: CircuitBreaker }> {
     const result: Array<{ id: string; adapter: ProviderAdapter; breaker: CircuitBreaker }> = []
     for (const [id, adapter] of this.#adapters) {
