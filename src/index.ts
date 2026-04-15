@@ -19,6 +19,7 @@ export type {
   ToolCall,
   ToolDefinition,
 } from './types/openai'
+export { OpenAIChatRequestSchema } from './types/openai'
 export type {
   ProviderId,
   ProviderAdapter,
@@ -34,6 +35,11 @@ export { DEFAULT_CONFIG } from './config/defaults'
 export { CircuitBreaker } from './router/circuit-breaker'
 export { Router } from './router/router'
 export { ProviderRegistry } from './providers/registry'
+export { bootstrapProviders } from './providers/bootstrap'
+export { OllamaAdapter } from './providers/ollama/adapter'
 export { ResolvedCredential } from './auth/credential'
 export { CredentialCache } from './auth/cache'
 export { ProxyServer } from './server/server'
+export { MetricsCollector } from './server/metrics'
+export { createLogger } from './logging/logger'
+export { createAuditLogger } from './logging/audit'
