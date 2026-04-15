@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/versatile/dist/config.schema.json",
+  "server": {
+    "host": "127.0.0.1",
+    "port": 4141,
+    "maxBodyBytes": 4194304,
+    "connectTimeoutMs": 5000,
+    "firstByteTimeoutMs": 10000,
+    "totalTimeoutMs": 120000,
+    "drainTimeoutMs": 10000
+  },
+  "providers": {
+    "ollama": {
+      "enabled": true,
+      "baseUrl": "http://localhost:11434"
+    }
+  },
+  "routing": {
+    "modelMap": {},
+    "fallbackChain": ["ollama"]
+  },
+  "logging": {
+    "level": "info",
+    "redactPatterns": ["*.apiKey", "*.token", "authorization", "*.secret", "*.credential"],
+    "auditLog": false
+  },
+  "circuitBreaker": {
+    "failureThreshold": 3,
+    "windowMs": 60000,
+    "cooldownMs": 30000
+  },
+  "streaming": {
+    "keepAliveIntervalMs": 15000,
+    "availabilityCheckTtlMs": 30000
+  }
+}
