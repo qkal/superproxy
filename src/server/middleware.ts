@@ -107,10 +107,11 @@ export function handleCors(req: Request): Response | null {
   const headers = new Headers()
   headers.set('Access-Control-Allow-Origin', origin)
   headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  headers.set(
-    'Access-Control-Allow-Headers',
-    requestedHeaders || 'Content-Type, Authorization, x-request-id',
-  )
+
+  // Always include default headers plus any requested headers
+  const defaultHeaders = 'Content-Type, Authorization, x-request-id'
+  const allowHeaders = requestedHeaders ? `${defaultHeaders}, ${requestedHeaders}` : defaultHeaders
+  headers.set('Access-Control-Allow-Headers', allowHeaders)
   headers.set('Access-Control-Max-Age', '86400')
 
   return new Response(null, { status: 204, headers })
@@ -132,8 +133,12 @@ export function validateContentType(headers: Headers): ProxyError | null {
     return null
   }
 
-  // Check for application/json
-  if (!contentType.includes('application/json')) {
+  // Parse media type - extract the part before semicolon (if any)
+  // e.g., "application/json; charset=utf-8" -> "application/json"
+  const mediaType = contentType.split(';')[0].trim().toLowerCase()
+
+  // Check for exact match of application/json
+  if (mediaType !== 'application/json') {
     return {
       kind: 'request_invalid',
       issues: [
