@@ -15,10 +15,11 @@ program
   .option('-c, --config <path>', 'Path to config file')
   .option('-l, --log-level <level>', 'Log level: debug, info, warn, error')
   .action(async (options) => {
-    const overrides: Record<string, unknown> = {}
-    if (options.port) overrides.server = { ...overrides.server, port: options.port }
-    if (options.host) overrides.server = { ...overrides.server, host: options.host }
-    if (options.logLevel) overrides.logging = { ...overrides.logging, level: options.logLevel }
+    const overrides: Record<string, Record<string, unknown>> = {}
+    if (options.port) overrides.server = { ...(overrides.server ?? {}), port: options.port }
+    if (options.host) overrides.server = { ...(overrides.server ?? {}), host: options.host }
+    if (options.logLevel)
+      overrides.logging = { ...(overrides.logging ?? {}), level: options.logLevel }
 
     const config = loadConfig({
       configPath: options.config,
