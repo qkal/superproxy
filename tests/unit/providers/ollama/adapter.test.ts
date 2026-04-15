@@ -83,6 +83,7 @@ describe('OllamaAdapter', () => {
     const result = await adapter.isAvailable()
     expect(result.available).toBe(false)
     expect(result.reason).toBe('Connection refused')
+    expect(result.latencyMs).toBeGreaterThanOrEqual(0)
   })
 
   describe('streamCompletion', () => {

@@ -36,7 +36,12 @@ export class OllamaAdapter implements ProviderAdapter<'ollama'> {
       }
       return { available: false, reason: `HTTP ${response.status}`, latencyMs }
     } catch (error) {
-      return { available: false, reason: error instanceof Error ? error.message : 'Unknown error' }
+      const latencyMs = Date.now() - start
+      return {
+        available: false,
+        reason: error instanceof Error ? error.message : 'Unknown error',
+        latencyMs,
+      }
     }
   }
 
