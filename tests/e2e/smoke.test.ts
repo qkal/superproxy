@@ -23,7 +23,7 @@ describe('ProxyServer smoke test', () => {
           connectTimeoutMs: 5000,
           firstByteTimeoutMs: 10000,
           totalTimeoutMs: 120000,
-          drainTimeoutMs: 10000,
+          drainTimeoutMs: 100,
         },
       },
     })
