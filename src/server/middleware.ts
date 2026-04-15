@@ -95,6 +95,56 @@ export function createErrorResponse(error: ProxyError, requestId: string): Respo
   )
 }
 
+export function handleCors(req: Request): Response | null {
+  if (req.method !== 'OPTIONS') {
+    return null
+  }
+
+  const origin = req.headers.get('Origin') || '*'
+  const requestedMethod = req.headers.get('Access-Control-Request-Method') || 'GET, POST, OPTIONS'
+  const requestedHeaders = req.headers.get('Access-Control-Request-Headers') || ''
+
+  const headers = new Headers()
+  headers.set('Access-Control-Allow-Origin', origin)
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  headers.set(
+    'Access-Control-Allow-Headers',
+    requestedHeaders || 'Content-Type, Authorization, x-request-id',
+  )
+  headers.set('Access-Control-Max-Age', '86400')
+
+  return new Response(null, { status: 204, headers })
+}
+
+export function createCorsHeaders(origin: string | null): Headers {
+  const headers = new Headers()
+  headers.set('Access-Control-Allow-Origin', origin || '*')
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-request-id')
+  return headers
+}
+
+export function validateContentType(headers: Headers): ProxyError | null {
+  const contentType = headers.get('Content-Type')
+
+  // Allow requests without body (GET, etc.)
+  if (!contentType) {
+    return null
+  }
+
+  // Check for application/json
+  if (!contentType.includes('application/json')) {
+    return {
+      kind: 'request_invalid',
+      issues: [
+        { message: 'Content-Type must be application/json', path: ['headers', 'Content-Type'] },
+      ],
+    }
+  }
+
+  return null
+}
+
 function formatErrorMessage(error: ProxyError): string {
   switch (error.kind) {
     case 'body_too_large':
