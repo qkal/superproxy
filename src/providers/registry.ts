@@ -28,11 +28,11 @@ export class ProviderRegistry {
   }
 
   // Expose maps for Router construction
-  get adapters(): Map<string, ProviderAdapter> {
+  get adapters(): ReadonlyMap<string, ProviderAdapter> {
     return this.#adapters
   }
 
-  get breakers(): Map<string, CircuitBreaker> {
+  get breakers(): ReadonlyMap<string, CircuitBreaker> {
     return this.#breakers
   }
 
