@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 export type Role = 'system' | 'user' | 'assistant' | 'tool'
 
 export interface TextContentPart {
@@ -47,6 +49,73 @@ export interface OpenAIChatRequest {
   tool_choice?: 'none' | 'auto' | 'required' | { type: 'function'; function: { name: string } }
   user?: string
 }
+
+// Zod Schemas for validation
+const RoleSchema = z.enum(['system', 'user', 'assistant', 'tool'])
+
+const TextContentPartSchema = z.object({
+  type: z.literal('text'),
+  text: z.string(),
+})
+
+const ImageContentPartSchema = z.object({
+  type: z.literal('image_url'),
+  image_url: z.object({
+    url: z.string(),
+    detail: z.enum(['auto', 'low', 'high']).optional(),
+  }),
+})
+
+const ContentPartSchema = z.union([TextContentPartSchema, ImageContentPartSchema])
+
+const ToolCallSchema = z.object({
+  id: z.string(),
+  type: z.literal('function'),
+  function: z.object({
+    name: z.string(),
+    arguments: z.string(),
+  }),
+})
+
+const ToolDefinitionSchema = z.object({
+  type: z.literal('function'),
+  function: z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    parameters: z.record(z.unknown()),
+  }),
+})
+
+const ChatMessageSchema = z.object({
+  role: RoleSchema,
+  content: z.union([z.string(), z.array(ContentPartSchema)]),
+  name: z.string().optional(),
+  tool_call_id: z.string().optional(),
+  tool_calls: z.array(ToolCallSchema).optional(),
+})
+
+export const OpenAIChatRequestSchema = z.object({
+  model: z.string().min(1, 'Model is required'),
+  messages: z.array(ChatMessageSchema).min(1, 'At least one message is required'),
+  stream: z.boolean().default(false),
+  temperature: z.number().min(0).max(2).optional(),
+  max_tokens: z.number().int().positive().optional(),
+  top_p: z.number().min(0).max(1).optional(),
+  stop: z.union([z.string(), z.array(z.string())]).optional(),
+  tools: z.array(ToolDefinitionSchema).optional(),
+  tool_choice: z
+    .union([
+      z.enum(['none', 'auto', 'required']),
+      z.object({
+        type: z.literal('function'),
+        function: z.object({ name: z.string() }),
+      }),
+    ])
+    .optional(),
+  user: z.string().optional(),
+})
+
+export type OpenAIChatRequestInput = z.input<typeof OpenAIChatRequestSchema>
 
 export interface OpenAIChatChunk {
   id: string
