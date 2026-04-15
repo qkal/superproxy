@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "no-console": "off",
+    "no-unused-vars": "error",
+    "no-undef": "off",
+    "eq-eq": "error",
+    "no-async-promise-executor": "error"
+  },
+  "ignore": ["node_modules", "dist"]
+}
