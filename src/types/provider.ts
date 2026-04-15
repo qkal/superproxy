@@ -27,7 +27,7 @@ export type BackendRequest = BackendRequestFor<ProviderId>
 
 export type HealthResult =
   | { available: true; latencyMs: number }
-  | { available: false; reason: string }
+  | { available: false; reason: string; latencyMs?: number }
 
 export interface ProviderAdapter<Id extends ProviderId = ProviderId> {
   readonly id: Id

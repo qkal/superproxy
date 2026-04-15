@@ -34,7 +34,7 @@ export class OllamaAdapter implements ProviderAdapter<'ollama'> {
       if (response.ok) {
         return { available: true, latencyMs }
       }
-      return { available: false, reason: `HTTP ${response.status}` }
+      return { available: false, reason: `HTTP ${response.status}`, latencyMs }
     } catch (error) {
       return { available: false, reason: error instanceof Error ? error.message : 'Unknown error' }
     }
@@ -44,7 +44,7 @@ export class OllamaAdapter implements ProviderAdapter<'ollama'> {
     const result = transformRequest(req)
     if ('kind' in result) {
       // Error case - transformRequest returns ProxyError for unsupported features
-      throw new Error(result.kind)
+      throw new Error(`${result.kind}: ${'blocker' in result ? result.blocker : 'Unknown error'}`)
     }
     return result
   }
