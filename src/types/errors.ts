@@ -1,6 +1,5 @@
 import type { ZodIssue } from 'zod'
-
-type ProviderId = 'ollama' | 'claude' | 'codex' | 'openai-compat' | 'windsurf'
+import type { ProviderId } from './provider'
 
 export type ProxyError =
   | { kind: 'no_adapter_found'; model: string }
