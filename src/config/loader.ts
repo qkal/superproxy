@@ -17,12 +17,12 @@ function parseEnvString(key: string): string | undefined {
 
 function applyEnvVars(config: Record<string, unknown>): Record<string, unknown> {
   const envMappings: Array<[string, string, 'number' | 'string']> = [
-    ['VERSATILE_SERVER_PORT', 'server.port', 'number'],
-    ['VERSATILE_SERVER_HOST', 'server.host', 'string'],
-    ['VERSATILE_SERVER_MAX_BODY_BYTES', 'server.maxBodyBytes', 'number'],
-    ['VERSATILE_LOG_LEVEL', 'logging.level', 'string'],
-    ['VERSATILE_PROVIDERS_OLLAMA_ENABLED', 'providers.ollama.enabled', 'string'],
-    ['VERSATILE_PROVIDERS_OLLAMA_BASE_URL', 'providers.ollama.baseUrl', 'string'],
+    ['SUPERPROXY_SERVER_PORT', 'server.port', 'number'],
+    ['SUPERPROXY_SERVER_HOST', 'server.host', 'string'],
+    ['SUPERPROXY_SERVER_MAX_BODY_BYTES', 'server.maxBodyBytes', 'number'],
+    ['SUPERPROXY_LOG_LEVEL', 'logging.level', 'string'],
+    ['SUPERPROXY_PROVIDERS_OLLAMA_ENABLED', 'providers.ollama.enabled', 'string'],
+    ['SUPERPROXY_PROVIDERS_OLLAMA_BASE_URL', 'providers.ollama.baseUrl', 'string'],
   ]
 
   for (const [envKey, path, type] of envMappings) {

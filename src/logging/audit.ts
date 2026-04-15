@@ -12,7 +12,7 @@ export function createAuditLogger(config: LoggingConfig): Logger | null {
   return pino(
     {
       level: 'info',
-      name: 'versatile-audit',
+      name: 'superproxy-audit',
     },
     dest,
   )

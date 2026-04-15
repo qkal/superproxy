@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/versatile/dist/config.schema.json",
+  "$schema": "./node_modules/superproxy/dist/config.schema.json",
   "server": {
     "host": "127.0.0.1",
     "port": 4141,

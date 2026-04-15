@@ -85,16 +85,13 @@ export class ProxyServer {
       },
     })
 
-    logger.info(
-      { host: config.server.host, port: config.server.port },
-      'Versatile proxy server started',
-    )
+    logger.info({ host: config.server.host, port: config.server.port }, 'SuperProxy server started')
   }
 
   async stop(): Promise<void> {
     if (this.#server) {
       this.#server.stop()
-      this.#logger.info('Versatile proxy server stopped')
+      this.#logger.info('SuperProxy server stopped')
     }
   }
 

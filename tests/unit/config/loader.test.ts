@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 describe('loadConfig', () => {
-  const testDir = join(tmpdir(), 'versatile-test-config-' + process.pid)
+  const testDir = join(tmpdir(), 'superproxy-test-config-' + process.pid)
 
   beforeEach(() => {
     if (!existsSync(testDir)) mkdirSync(testDir, { recursive: true })
@@ -17,7 +17,7 @@ describe('loadConfig', () => {
   })
 
   it('loads valid config from file', () => {
-    const configPath = join(testDir, 'versatile.config.json')
+    const configPath = join(testDir, 'superproxy.config.json')
     writeFileSync(
       configPath,
       JSON.stringify({
@@ -48,16 +48,16 @@ describe('loadConfig', () => {
   })
 
   it('merges env vars over file config', () => {
-    const originalPort = process.env.VERSATILE_SERVER_PORT
-    process.env.VERSATILE_SERVER_PORT = '9999'
+    const originalPort = process.env.SUPERPROXY_SERVER_PORT
+    process.env.SUPERPROXY_SERVER_PORT = '9999'
     try {
       const result = loadConfig({ configPath: '/nonexistent/path.json' })
       expect(result.server.port).toBe(9999)
     } finally {
       if (originalPort !== undefined) {
-        process.env.VERSATILE_SERVER_PORT = originalPort
+        process.env.SUPERPROXY_SERVER_PORT = originalPort
       } else {
-        delete process.env.VERSATILE_SERVER_PORT
+        delete process.env.SUPERPROXY_SERVER_PORT
       }
     }
   })
@@ -74,8 +74,8 @@ describe('loadConfig', () => {
   })
 
   it('CLI overrides override env vars', () => {
-    const originalPort = process.env.VERSATILE_SERVER_PORT
-    process.env.VERSATILE_SERVER_PORT = '8080'
+    const originalPort = process.env.SUPERPROXY_SERVER_PORT
+    process.env.SUPERPROXY_SERVER_PORT = '8080'
     try {
       const result = loadConfig({
         configPath: '/nonexistent/path.json',
@@ -84,9 +84,9 @@ describe('loadConfig', () => {
       expect(result.server.port).toBe(3000)
     } finally {
       if (originalPort !== undefined) {
-        process.env.VERSATILE_SERVER_PORT = originalPort
+        process.env.SUPERPROXY_SERVER_PORT = originalPort
       } else {
-        delete process.env.VERSATILE_SERVER_PORT
+        delete process.env.SUPERPROXY_SERVER_PORT
       }
     }
   })

@@ -1,17 +1,17 @@
 {
-  "name": "versatile",
+  "name": "superproxy",
   "version": "0.1.0",
   "description": "Local AI coding assistant proxy — route requests to Ollama, Claude Code, Codex CLI, and OpenAI-compatible endpoints",
   "license": "BSD-2-Clause-Patent",
   "author": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/<owner>/versatile"
+    "url": "https://github.com/qkal/superproxy"
   },
   "bugs": {
-    "url": "https://github.com/<owner>/versatile/issues"
+    "url": "https://github.com/qkal/superproxy/issues"
   },
-  "homepage": "https://github.com/<owner>/versatile#readme",
+  "homepage": "https://github.com/qkal/superproxy#readme",
   "keywords": [
     "ai",
     "llm",
@@ -26,7 +26,7 @@
     "bun": ">=1.1.0"
   },
   "bin": {
-    "versatile": "./dist/cli.js"
+    "superproxy": "./dist/cli.js"
   },
   "main": "./dist/index.js",
   "exports": {
@@ -37,12 +37,12 @@
     "dist/",
     "README.md",
     "LICENSE",
-    "versatile.config.json"
+    "superproxy.config.json"
   ],
   "scripts": {
     "dev": "bun src/cli/cli.ts serve",
     "build": "bun build src/cli/cli.ts --outfile dist/cli.js --target bun && bun build src/index.ts --outfile dist/index.js --target bun",
-    "build:binary": "bun build src/cli/cli.ts --compile --outfile dist/versatile",
+    "build:binary": "bun build src/cli/cli.ts --compile --outfile dist/superproxy",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src/ tests/",
     "format": "prettier --write src/ tests/",

@@ -5,7 +5,7 @@ import { ProxyServer } from '@/server/server'
 
 const program = new Command()
 
-program.name('versatile').version('0.1.0').description('Local AI coding assistant proxy')
+program.name('superproxy').version('0.1.0').description('Local AI coding assistant proxy')
 
 program
   .command('serve')
@@ -30,7 +30,7 @@ program
     const server = new ProxyServer(config, logger)
 
     await server.start()
-    logger.info(`Versatile proxy listening on ${config.server.host}:${server.port}`)
+    logger.info(`SuperProxy listening on ${config.server.host}:${server.port}`)
 
     const shutdown = async () => {
       logger.info('Shutting down...')
