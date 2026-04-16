@@ -67,6 +67,10 @@ export function createErrorResponse(error: ProxyError, requestId: string): Respo
       status = 500
       type = 'port_in_use'
       break
+    case 'shutting_down':
+      status = 503
+      type = 'shutting_down'
+      break
     case 'config_invalid':
       status = 500
       type = 'config_error'
@@ -185,5 +189,7 @@ function formatErrorMessage(error: ProxyError): string {
       return `Invalid request: ${error.issues.map((i) => i.message).join(', ')}`
     case 'stream_interrupted':
       return `Stream interrupted from ${error.provider}`
+    case 'shutting_down':
+      return 'Server is shutting down'
   }
 }

@@ -22,3 +22,4 @@ export type ProxyError =
   | { kind: 'request_invalid'; issues: ZodIssue[] }
   | { kind: 'not_implemented'; provider: ProviderId; blocker: string }
   | { kind: 'port_in_use'; port: number }
+  | { kind: 'shutting_down' }

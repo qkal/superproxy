@@ -304,12 +304,7 @@ export class ProxyServer {
 
     // Check if shutting down
     if (this.#shuttingDown) {
-      const error: ProxyError = {
-        kind: 'upstream_error',
-        provider: 'ollama',
-        status: 503,
-        requestId,
-      }
+      const error: ProxyError = { kind: 'shutting_down' }
       return createErrorResponse(error, requestId)
     }
 
