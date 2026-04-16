@@ -45,7 +45,7 @@ describe('bootstrapProviders', () => {
   })
 
   it('should create router with fallback chain', () => {
-    const { router, registry } = bootstrapProviders(config)
+    const { router } = bootstrapProviders(config)
     const adapters = router.resolveAll('any-model')
     expect(adapters.length).toBeGreaterThan(0)
   })

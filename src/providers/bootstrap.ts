@@ -3,6 +3,8 @@ import { ProviderRegistry } from './registry'
 import { Router } from '@/router/router'
 import { CredentialCache } from '@/auth/cache'
 import { OllamaAdapter } from './ollama/adapter'
+import { OpenAICompatAdapter } from './openai-compat/adapter'
+import { ClaudeAdapter } from './claude/adapter'
 
 export interface BootstrapResult {
   registry: ProviderRegistry
@@ -17,6 +19,14 @@ export function bootstrapProviders(config: ProxyConfig): BootstrapResult {
   // Register enabled providers
   if (config.providers.ollama?.enabled) {
     registry.register(new OllamaAdapter(config.providers.ollama))
+  }
+
+  if (config.providers['openai-compat']?.enabled) {
+    registry.register(new OpenAICompatAdapter(config.providers['openai-compat']))
+  }
+
+  if (config.providers.claude?.enabled) {
+    registry.register(new ClaudeAdapter(config.providers.claude))
   }
 
   // Create router with registry's adapters and breakers

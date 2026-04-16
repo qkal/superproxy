@@ -67,6 +67,10 @@ export function createErrorResponse(error: ProxyError, requestId: string): Respo
       status = 500
       type = 'port_in_use'
       break
+    case 'shutting_down':
+      status = 503
+      type = 'shutting_down'
+      break
     case 'config_invalid':
       status = 500
       type = 'config_error'
@@ -101,7 +105,6 @@ export function handleCors(req: Request): Response | null {
   }
 
   const origin = req.headers.get('Origin') || '*'
-  const requestedMethod = req.headers.get('Access-Control-Request-Method') || 'GET, POST, OPTIONS'
   const requestedHeaders = req.headers.get('Access-Control-Request-Headers') || ''
 
   const headers = new Headers()
@@ -142,7 +145,11 @@ export function validateContentType(headers: Headers): ProxyError | null {
     return {
       kind: 'request_invalid',
       issues: [
-        { message: 'Content-Type must be application/json', path: ['headers', 'Content-Type'] },
+        {
+          code: 'custom',
+          message: 'Content-Type must be application/json',
+          path: ['headers', 'Content-Type'],
+        },
       ],
     }
   }
@@ -182,5 +189,7 @@ function formatErrorMessage(error: ProxyError): string {
       return `Invalid request: ${error.issues.map((i) => i.message).join(', ')}`
     case 'stream_interrupted':
       return `Stream interrupted from ${error.provider}`
+    case 'shutting_down':
+      return 'Server is shutting down'
   }
 }

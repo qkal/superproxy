@@ -10,12 +10,12 @@ describe('CircuitBreaker', () => {
   }
 
   it('starts in CLOSED state', () => {
-    const cb = new CircuitBreaker('ollama', defaultConfig)
+    const cb = new CircuitBreaker(defaultConfig)
     expect(cb.state).toBe('CLOSED')
   })
 
   it('transitions to OPEN after failureThreshold failures', () => {
-    const cb = new CircuitBreaker('ollama', defaultConfig)
+    const cb = new CircuitBreaker(defaultConfig)
     cb.recordFailure()
     cb.recordFailure()
     expect(cb.state).toBe('CLOSED')
@@ -24,7 +24,7 @@ describe('CircuitBreaker', () => {
   })
 
   it('resets failure count on success', () => {
-    const cb = new CircuitBreaker('ollama', defaultConfig)
+    const cb = new CircuitBreaker(defaultConfig)
     cb.recordFailure()
     cb.recordFailure()
     cb.recordSuccess()
@@ -33,7 +33,7 @@ describe('CircuitBreaker', () => {
   })
 
   it('returns false for allowRequest in OPEN state', () => {
-    const cb = new CircuitBreaker('ollama', defaultConfig)
+    const cb = new CircuitBreaker(defaultConfig)
     cb.recordFailure()
     cb.recordFailure()
     cb.recordFailure()
@@ -46,7 +46,7 @@ describe('CircuitBreaker', () => {
       windowMs: 60_000,
       cooldownMs: 10,
     }
-    const cb = new CircuitBreaker('ollama', config)
+    const cb = new CircuitBreaker(config)
     cb.recordFailure()
     expect(cb.state).toBe('OPEN')
     const start = Date.now() + 50
@@ -61,7 +61,7 @@ describe('CircuitBreaker', () => {
       windowMs: 60_000,
       cooldownMs: 10,
     }
-    const cb = new CircuitBreaker('ollama', config)
+    const cb = new CircuitBreaker(config)
     cb.recordFailure()
     const start = Date.now() + 50
     while (Date.now() < start) {}
@@ -76,7 +76,7 @@ describe('CircuitBreaker', () => {
       windowMs: 60_000,
       cooldownMs: 10,
     }
-    const cb = new CircuitBreaker('ollama', config)
+    const cb = new CircuitBreaker(config)
     cb.recordFailure()
     const start = Date.now() + 50
     while (Date.now() < start) {}
@@ -86,7 +86,7 @@ describe('CircuitBreaker', () => {
   })
 
   it('manualReset returns to CLOSED', () => {
-    const cb = new CircuitBreaker('ollama', defaultConfig)
+    const cb = new CircuitBreaker(defaultConfig)
     cb.recordFailure()
     cb.recordFailure()
     cb.recordFailure()

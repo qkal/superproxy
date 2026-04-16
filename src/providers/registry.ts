@@ -1,4 +1,4 @@
-import type { ProviderAdapter, ProviderId } from '@/types/provider'
+import type { ProviderAdapter } from '@/types/provider'
 import type { CircuitBreakerConfig } from '@/types/config'
 import { CircuitBreaker } from '@/router/circuit-breaker'
 
@@ -15,7 +15,7 @@ export class ProviderRegistry {
     this.#adapters.set(adapter.id, adapter)
     this.#breakers.set(
       adapter.id,
-      new CircuitBreaker(adapter.id as ProviderId, this.#breakerConfig),
+      new CircuitBreaker(this.#breakerConfig),
     )
   }
 

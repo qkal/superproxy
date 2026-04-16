@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { Router } from '@/router/router'
 import { CircuitBreaker } from '@/router/circuit-breaker'
 import type { ProviderAdapter } from '@/types/provider'
@@ -35,8 +35,8 @@ describe('Router.resolveAll', () => {
       ['claude', mockAdapter('claude')],
     ])
     const breakers = new Map([
-      ['ollama', new CircuitBreaker('ollama', breakerConfig)],
-      ['claude', new CircuitBreaker('claude', breakerConfig)],
+      ['ollama', new CircuitBreaker(breakerConfig)],
+      ['claude', new CircuitBreaker(breakerConfig)],
     ])
     const router = new Router(routing, adapters, breakers)
 
@@ -53,14 +53,14 @@ describe('Router.resolveAll', () => {
       ['ollama', mockAdapter('ollama')],
       ['claude', mockAdapter('claude')],
     ])
-    const ollamaBreaker = new CircuitBreaker('ollama', { ...breakerConfig, failureThreshold: 1 })
+    const ollamaBreaker = new CircuitBreaker({ ...breakerConfig, failureThreshold: 1 })
     ollamaBreaker.recordFailure()
     ollamaBreaker.recordFailure()
     ollamaBreaker.recordFailure()
 
     const breakers = new Map([
       ['ollama', ollamaBreaker],
-      ['claude', new CircuitBreaker('claude', breakerConfig)],
+      ['claude', new CircuitBreaker(breakerConfig)],
     ])
     const router = new Router(routing, adapters, breakers)
 
@@ -74,7 +74,7 @@ describe('Router.resolveAll', () => {
       fallbackChain: ['ollama'],
     }
     const adapters = new Map([['ollama', mockAdapter('ollama')]])
-    const breaker = new CircuitBreaker('ollama', { ...breakerConfig, failureThreshold: 1 })
+    const breaker = new CircuitBreaker({ ...breakerConfig, failureThreshold: 1 })
     breaker.recordFailure()
     breaker.recordFailure()
     breaker.recordFailure()

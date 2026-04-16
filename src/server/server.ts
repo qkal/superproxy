@@ -17,7 +17,6 @@ import {
 } from '@/server/middleware'
 import { OpenAIChatRequestSchema } from '@/types/openai'
 import { createSSEStream, createBufferedResponse } from '@/server/sse'
-import { ResolvedCredential } from '@/auth/credential'
 
 const VERSION = '0.1.0'
 
@@ -183,20 +182,29 @@ export class ProxyServer {
     const models: Array<{ id: string; object: 'model'; created: number; owned_by: string }> = []
     const seen = new Set<string>()
 
-    for (const { id: providerId, adapter } of this.#deps.registry.list()) {
-      // Check if adapter has a way to list models (via capabilities check)
-      if (adapter.capabilities.includes('chat')) {
-        // For now, return provider as a model
-        // In real implementation, this would query each provider's model list
-        const modelId = `${providerId}/default`
-        if (!seen.has(modelId)) {
-          models.push({
-            id: modelId,
-            object: 'model',
+    const fetchPromises = this.#deps.registry.list().map(async ({ id: providerId, adapter }) => {
+      if (!adapter.capabilities.includes('chat')) return []
+
+      try {
+        return await this.#fetchProviderModels(providerId, adapter)
+      } catch {
+        return [
+          {
+            id: `${providerId}/default`,
+            object: 'model' as const,
             created: Math.floor(Date.now() / 1000),
             owned_by: providerId,
-          })
-          seen.add(modelId)
+          },
+        ]
+      }
+    })
+
+    const results = await Promise.all(fetchPromises)
+    for (const batch of results) {
+      for (const m of batch) {
+        if (!seen.has(m.id)) {
+          seen.add(m.id)
+          models.push(m)
         }
       }
     }
@@ -204,22 +212,107 @@ export class ProxyServer {
     return models
   }
 
+  async #fetchProviderModels(
+    providerId: string,
+    adapter: ProviderAdapter,
+  ): Promise<Array<{ id: string; object: 'model'; created: number; owned_by: string }>> {
+    // Ollama: query /api/tags
+    if (providerId === 'ollama') {
+      const health = await adapter.isAvailable()
+      if (!health.available) return []
+
+      const credResult = await adapter.resolveCredentials()
+      if (!credResult.ok) return []
+
+      // Ollama base URL from config
+      const ollamaConfig = this.#config.providers.ollama
+      if (!ollamaConfig) return []
+
+      const resp = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!resp.ok) return []
+
+      const data = (await resp.json()) as { models?: Array<{ name: string; modified_at?: string }> }
+      return (data.models ?? []).map((m) => ({
+        id: m.name,
+        object: 'model' as const,
+        created: m.modified_at ? Math.floor(new Date(m.modified_at).getTime() / 1000) : Math.floor(Date.now() / 1000),
+        owned_by: 'ollama',
+      }))
+    }
+
+    // OpenAI-compat: query /v1/models
+    if (providerId === 'openai-compat') {
+      const compatConfig = this.#config.providers['openai-compat']
+      if (!compatConfig) return []
+
+      const baseUrl = compatConfig.baseUrl ?? 'https://api.openai.com'
+      const credResult = await adapter.resolveCredentials()
+      const headers = new Headers()
+      if (credResult.ok) {
+        credResult.credential.applyToRequest(headers)
+      }
+
+      const resp = await fetch(`${baseUrl}/v1/models`, {
+        headers,
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!resp.ok) return []
+
+      const data = (await resp.json()) as {
+        data?: Array<{ id: string; created?: number; owned_by?: string }>
+      }
+      return (data.data ?? []).map((m) => ({
+        id: m.id,
+        object: 'model' as const,
+        created: m.created ?? Math.floor(Date.now() / 1000),
+        owned_by: m.owned_by ?? 'openai-compat',
+      }))
+    }
+
+    // Claude: return well-known model list only if adapter is available
+    if (providerId === 'claude') {
+      const credResult = await adapter.resolveCredentials()
+      if (!credResult.ok) {
+        this.#logger.warn({ provider: providerId, error: credResult.error }, 'Claude credentials unavailable, skipping model list')
+        return []
+      }
+
+      const health = await adapter.isAvailable()
+      if (!health.available) {
+        this.#logger.warn({ provider: providerId, reason: health.reason }, 'Claude API unreachable, skipping model list')
+        return []
+      }
+
+      const knownModels = [
+        'claude-sonnet-4-20250514',
+        'claude-3-5-haiku-20241022',
+        'claude-3-5-sonnet-20241022',
+        'claude-3-opus-20240229',
+      ]
+      return knownModels.map((id) => ({
+        id,
+        object: 'model' as const,
+        created: Math.floor(Date.now() / 1000),
+        owned_by: 'anthropic',
+      }))
+    }
+
+    return []
+  }
+
   async #handleChatCompletion(
     req: Request,
     requestId: string,
-    startTime: number,
+    _startTime: number,
   ): Promise<Response> {
     const config = this.#config
     const deps = this.#deps
 
     // Check if shutting down
     if (this.#shuttingDown) {
-      const error: ProxyError = {
-        kind: 'upstream_error',
-        provider: 'proxy',
-        status: 503,
-        requestId,
-      }
+      const error: ProxyError = { kind: 'shutting_down' }
       return createErrorResponse(error, requestId)
     }
 
@@ -394,8 +487,11 @@ export class ProxyServer {
       let credential = this.#deps.credentialCache.get(providerId)
       if (!credential) {
         const credentialResult = await provider.resolveCredentials()
-        if (credentialResult.kind === 'error') {
-          throw credentialResult.error
+        if (!credentialResult.ok) {
+          const credError: ProxyError = credentialResult.error === 'parse_failed'
+            ? { kind: 'credential_parse_failed', provider: providerId as any, hint: credentialResult.hint }
+            : { kind: 'credential_missing', provider: providerId as any, hint: credentialResult.hint }
+          throw credError
         }
         credential = credentialResult.credential
         this.#deps.credentialCache.set(providerId, credential)
