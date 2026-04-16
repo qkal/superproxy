@@ -149,7 +149,7 @@ export function normalizeEvent(
       const stopReason = delta?.stop_reason as string | undefined
 
       let finishReason: 'stop' | 'length' | 'tool_calls' | null = null
-      if (stopReason === 'end_turn') finishReason = 'stop'
+      if (stopReason === 'end_turn' || stopReason === 'stop_sequence') finishReason = 'stop'
       else if (stopReason === 'max_tokens') finishReason = 'length'
       else if (stopReason === 'tool_use') finishReason = 'tool_calls'
 
