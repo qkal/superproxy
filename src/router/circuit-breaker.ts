@@ -8,7 +8,7 @@ export class CircuitBreaker {
   #failureCount = 0
   #lastFailureTime = 0
 
-  constructor(_providerId: string, config: CircuitBreakerConfig) {
+  constructor(config: CircuitBreakerConfig) {
     this.#config = config
   }
 

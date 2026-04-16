@@ -271,8 +271,20 @@ export class ProxyServer {
       }))
     }
 
-    // Claude: return well-known model list
+    // Claude: return well-known model list only if adapter is available
     if (providerId === 'claude') {
+      const credResult = await adapter.resolveCredentials()
+      if (!credResult.ok) {
+        this.#logger.warn({ provider: providerId, error: credResult.error }, 'Claude credentials unavailable, skipping model list')
+        return []
+      }
+
+      const health = await adapter.isAvailable()
+      if (!health.available) {
+        this.#logger.warn({ provider: providerId, reason: health.reason }, 'Claude API unreachable, skipping model list')
+        return []
+      }
+
       const knownModels = [
         'claude-sonnet-4-20250514',
         'claude-3-5-haiku-20241022',
@@ -476,7 +488,10 @@ export class ProxyServer {
       if (!credential) {
         const credentialResult = await provider.resolveCredentials()
         if (!credentialResult.ok) {
-          throw new Error(`Credential error for ${providerId}: ${credentialResult.error} — ${credentialResult.hint}`)
+          const credError: ProxyError = credentialResult.error === 'parse_failed'
+            ? { kind: 'credential_parse_failed', provider: providerId as any, hint: credentialResult.hint }
+            : { kind: 'credential_missing', provider: providerId as any, hint: credentialResult.hint }
+          throw credError
         }
         credential = credentialResult.credential
         this.#deps.credentialCache.set(providerId, credential)

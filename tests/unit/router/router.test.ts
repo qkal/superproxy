@@ -34,7 +34,7 @@ describe('Router', () => {
     const breakers = new Map<string, CircuitBreaker>()
     breakers.set(
       'ollama',
-      new CircuitBreaker('ollama', { failureThreshold: 3, windowMs: 60000, cooldownMs: 30000 }),
+      new CircuitBreaker({ failureThreshold: 3, windowMs: 60000, cooldownMs: 30000 }),
     )
     const router = new Router(routing, adapters, breakers)
     const result = router.resolve('llama3.2')
@@ -52,7 +52,7 @@ describe('Router', () => {
     const breakers = new Map<string, CircuitBreaker>()
     breakers.set(
       'ollama',
-      new CircuitBreaker('ollama', { failureThreshold: 3, windowMs: 60000, cooldownMs: 30000 }),
+      new CircuitBreaker({ failureThreshold: 3, windowMs: 60000, cooldownMs: 30000 }),
     )
     const router = new Router(routing, adapters, breakers)
     const result = router.resolve('llama3.2-vision')
@@ -70,7 +70,7 @@ describe('Router', () => {
     const breakers = new Map<string, CircuitBreaker>()
     breakers.set(
       'ollama',
-      new CircuitBreaker('ollama', { failureThreshold: 3, windowMs: 60000, cooldownMs: 30000 }),
+      new CircuitBreaker({ failureThreshold: 3, windowMs: 60000, cooldownMs: 30000 }),
     )
     const router = new Router(routing, adapters, breakers)
     const result = router.resolve('unknown-model')
@@ -99,7 +99,7 @@ describe('Router', () => {
     adapters.set('ollama', makeMockAdapter('ollama'))
     adapters.set('claude', makeMockAdapter('claude'))
     const breakers = new Map<string, CircuitBreaker>()
-    const ollamaBreaker = new CircuitBreaker('ollama', {
+    const ollamaBreaker = new CircuitBreaker({
       failureThreshold: 1,
       windowMs: 60000,
       cooldownMs: 30000,
@@ -108,7 +108,7 @@ describe('Router', () => {
     breakers.set('ollama', ollamaBreaker)
     breakers.set(
       'claude',
-      new CircuitBreaker('claude', { failureThreshold: 3, windowMs: 60000, cooldownMs: 30000 }),
+      new CircuitBreaker({ failureThreshold: 3, windowMs: 60000, cooldownMs: 30000 }),
     )
     const router = new Router(routing, adapters, breakers)
     const result = router.resolve('anything')

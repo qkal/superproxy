@@ -1,7 +1,7 @@
 import type { CredentialResult, CredentialResolver } from '@/auth/types'
 import { ResolvedCredential } from '@/auth/credential'
 import type { CloudProviderConfig } from '@/types/config'
-import { readFileSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 
 export class OpenAICompatCredentialResolver implements CredentialResolver {
   readonly #config: CloudProviderConfig & { apiKey?: string }
@@ -25,16 +25,20 @@ export class OpenAICompatCredentialResolver implements CredentialResolver {
     // 3. Credential file
     if (this.#config.credentialFilePath) {
       try {
-        const raw = readFileSync(this.#config.credentialFilePath, 'utf-8').trim()
+        const raw = (await readFile(this.#config.credentialFilePath, 'utf-8')).trim()
         if (!raw) {
           return { ok: false, error: 'parse_failed', hint: `Empty credential file: ${this.#config.credentialFilePath}` }
         }
         return { ok: true, credential: new ResolvedCredential(raw) }
       } catch (err) {
+        const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined
+        const message = err instanceof Error ? err.message : String(err)
+        const error: 'permission_denied' | 'not_found' =
+          code === 'EACCES' || code === 'EPERM' ? 'permission_denied' : 'not_found'
         return {
           ok: false,
-          error: 'not_found',
-          hint: `Cannot read credential file: ${this.#config.credentialFilePath} (${err instanceof Error ? err.message : String(err)})`,
+          error,
+          hint: `Cannot read credential file: ${this.#config.credentialFilePath} (${message})`,
         }
       }
     }

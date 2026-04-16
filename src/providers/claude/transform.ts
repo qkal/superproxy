@@ -32,11 +32,20 @@ export function transformRequest(req: OpenAIChatRequest): BackendRequestFor<'cla
 
     // Map tool role to user with tool_result content blocks
     if (msg.role === 'tool' && msg.tool_call_id) {
+      const toolContent =
+        typeof msg.content === 'string'
+          ? msg.content
+          : Array.isArray(msg.content)
+            ? msg.content
+                .map((p) => (p.type === 'text' ? p.text : ''))
+                .filter(Boolean)
+                .join('\n')
+            : ''
       const content: AnthropicContentBlock[] = [
         {
           type: 'tool_result',
           tool_use_id: msg.tool_call_id,
-          content: typeof msg.content === 'string' ? msg.content : '',
+          content: toolContent,
         },
       ]
       messages.push({ role: 'user', content })

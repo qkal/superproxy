@@ -458,7 +458,7 @@ program
         const chatRequest = {
           model,
           messages: [{ role: 'user' as const, content: testMessage }],
-          stream: false as const,
+          stream: true as const,
         }
 
         const backendRequest = provider.transformRequest(chatRequest)

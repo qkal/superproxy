@@ -47,7 +47,9 @@ describe('ClaudeAdapter', () => {
     })
     const result = await adapter.isAvailable()
     expect(result.available).toBe(false)
-    expect('reason' in result && result.reason).toBeDefined()
+    if (!result.available) {
+      expect(result.reason).toBeDefined()
+    }
   })
 
   it('should fail credential resolution without ANTHROPIC_API_KEY', async () => {

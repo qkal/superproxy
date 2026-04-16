@@ -111,6 +111,7 @@ export class OpenAICompatAdapter implements ProviderAdapter<'openai-compat'> {
       // Process remaining buffer
       if (buffer.trim().startsWith('data:')) {
         const data = buffer.trim().slice(5).trim()
+        if (data === '[DONE]') return
         const chunk = normalizeChunk(data, requestId)
         if (chunk) {
           yield chunk

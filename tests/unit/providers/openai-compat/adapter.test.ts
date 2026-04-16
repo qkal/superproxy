@@ -41,6 +41,8 @@ describe('OpenAICompatAdapter', () => {
     })
     const result = await adapter.isAvailable()
     expect(result.available).toBe(false)
-    expect('reason' in result && result.reason).toBeDefined()
+    if (!result.available) {
+      expect(result.reason).toBeDefined()
+    }
   })
 })

@@ -1,6 +1,12 @@
 import type { OpenAIChatChunk } from '@/types/openai'
 
 /**
+ * Per-stream usage cache: stores input token counts from message_start
+ * so they can be included in the final message_delta usage report.
+ */
+const usageCache = new Map<string, { promptTokens: number }>()
+
+/**
  * Normalize an Anthropic SSE event into an OpenAI-compatible chat chunk.
  *
  * Anthropic SSE events have the format:
@@ -32,6 +38,17 @@ export function normalizeEvent(
   }
 
   switch (eventType) {
+    case 'message_start': {
+      // Cache input usage for this stream so message_delta can report accurate totals
+      const message = parsed.message as Record<string, unknown> | undefined
+      const usage = message?.usage as Record<string, number> | undefined
+      if (usage) {
+        const promptTokens = usage.input_tokens ?? usage.input_tokens_approx ?? 0
+        usageCache.set(requestId, { promptTokens })
+      }
+      return null
+    }
+
     case 'content_block_delta': {
       const delta = parsed.delta as Record<string, unknown> | undefined
       if (!delta) return null
@@ -138,6 +155,13 @@ export function normalizeEvent(
 
       if (finishReason) {
         const usage = parsed.usage as Record<string, number> | undefined
+        const cached = usageCache.get(requestId)
+        const promptTokens = cached?.promptTokens ?? 0
+        const completionTokens = usage?.output_tokens ?? 0
+
+        // Clean up cached entry
+        usageCache.delete(requestId)
+
         return {
           id: requestId,
           object: 'chat.completion.chunk',
@@ -150,12 +174,12 @@ export function normalizeEvent(
               finish_reason: finishReason,
             },
           ],
-          ...(usage
+          ...(usage || cached
             ? {
                 usage: {
-                  prompt_tokens: 0,
-                  completion_tokens: usage.output_tokens ?? 0,
-                  total_tokens: usage.output_tokens ?? 0,
+                  prompt_tokens: promptTokens,
+                  completion_tokens: completionTokens,
+                  total_tokens: promptTokens + completionTokens,
                 },
               }
             : {}),
