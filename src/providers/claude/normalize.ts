@@ -6,6 +6,11 @@ import type { OpenAIChatChunk } from '@/types/openai'
  */
 const usageCache = new Map<string, { promptTokens: number }>()
 
+/** Clean up cached usage for a given requestId (call from adapter's finally block). */
+export function clearUsageCache(requestId: string): void {
+  usageCache.delete(requestId)
+}
+
 /**
  * Normalize an Anthropic SSE event into an OpenAI-compatible chat chunk.
  *

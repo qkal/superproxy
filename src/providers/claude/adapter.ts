@@ -5,7 +5,7 @@ import type { CloudProviderConfig } from '@/types/config'
 import type { ResolvedCredential } from '@/auth/credential'
 import type { CredentialResult } from '@/auth/types'
 import { transformRequest } from './transform'
-import { normalizeEvent } from './normalize'
+import { normalizeEvent, clearUsageCache } from './normalize'
 import { ClaudeCredentialResolver } from './auth'
 
 const DEFAULT_BASE_URL = 'https://api.anthropic.com'
@@ -138,6 +138,7 @@ export class ClaudeAdapter implements ProviderAdapter<'claude'> {
         }
       }
     } finally {
+      clearUsageCache(requestId)
       reader.releaseLock()
     }
   }
