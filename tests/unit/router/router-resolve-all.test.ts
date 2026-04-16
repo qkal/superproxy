@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { Router } from '@/router/router'
 import { CircuitBreaker } from '@/router/circuit-breaker'
 import type { ProviderAdapter } from '@/types/provider'

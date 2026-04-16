@@ -1,17 +1,14 @@
 import type { CircuitBreakerConfig } from '@/types/config'
-import type { ProviderId } from '@/types/provider'
 
 export type CircuitBreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN'
 
 export class CircuitBreaker {
-  readonly #providerId: ProviderId
   readonly #config: CircuitBreakerConfig
   #state: CircuitBreakerState = 'CLOSED'
   #failureCount = 0
   #lastFailureTime = 0
 
-  constructor(providerId: ProviderId, config: CircuitBreakerConfig) {
-    this.#providerId = providerId
+  constructor(_providerId: string, config: CircuitBreakerConfig) {
     this.#config = config
   }
 

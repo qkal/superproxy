@@ -17,7 +17,6 @@ import {
 } from '@/server/middleware'
 import { OpenAIChatRequestSchema } from '@/types/openai'
 import { createSSEStream, createBufferedResponse } from '@/server/sse'
-import { ResolvedCredential } from '@/auth/credential'
 
 const VERSION = '0.1.0'
 
@@ -183,31 +182,122 @@ export class ProxyServer {
     const models: Array<{ id: string; object: 'model'; created: number; owned_by: string }> = []
     const seen = new Set<string>()
 
-    for (const { id: providerId, adapter } of this.#deps.registry.list()) {
-      // Check if adapter has a way to list models (via capabilities check)
-      if (adapter.capabilities.includes('chat')) {
-        // For now, return provider as a model
-        // In real implementation, this would query each provider's model list
-        const modelId = `${providerId}/default`
-        if (!seen.has(modelId)) {
-          models.push({
-            id: modelId,
-            object: 'model',
+    const fetchPromises = this.#deps.registry.list().map(async ({ id: providerId, adapter }) => {
+      if (!adapter.capabilities.includes('chat')) return []
+
+      try {
+        const providerModels = await this.#fetchProviderModels(providerId, adapter)
+        return providerModels.filter((m) => {
+          if (seen.has(m.id)) return false
+          seen.add(m.id)
+          return true
+        })
+      } catch {
+        // If we can't fetch models, return the provider as a fallback model
+        const fallbackId = `${providerId}/default`
+        if (seen.has(fallbackId)) return []
+        seen.add(fallbackId)
+        return [
+          {
+            id: fallbackId,
+            object: 'model' as const,
             created: Math.floor(Date.now() / 1000),
             owned_by: providerId,
-          })
-          seen.add(modelId)
-        }
+          },
+        ]
       }
+    })
+
+    const results = await Promise.all(fetchPromises)
+    for (const batch of results) {
+      models.push(...batch)
     }
 
     return models
   }
 
+  async #fetchProviderModels(
+    providerId: string,
+    adapter: ProviderAdapter,
+  ): Promise<Array<{ id: string; object: 'model'; created: number; owned_by: string }>> {
+    // Ollama: query /api/tags
+    if (providerId === 'ollama') {
+      const health = await adapter.isAvailable()
+      if (!health.available) return []
+
+      const credResult = await adapter.resolveCredentials()
+      if (!credResult.ok) return []
+
+      // Ollama base URL from config
+      const ollamaConfig = this.#config.providers.ollama
+      if (!ollamaConfig) return []
+
+      const resp = await fetch(`${ollamaConfig.baseUrl}/api/tags`, {
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!resp.ok) return []
+
+      const data = (await resp.json()) as { models?: Array<{ name: string; modified_at?: string }> }
+      return (data.models ?? []).map((m) => ({
+        id: m.name,
+        object: 'model' as const,
+        created: m.modified_at ? Math.floor(new Date(m.modified_at).getTime() / 1000) : Math.floor(Date.now() / 1000),
+        owned_by: 'ollama',
+      }))
+    }
+
+    // OpenAI-compat: query /v1/models
+    if (providerId === 'openai-compat') {
+      const compatConfig = this.#config.providers['openai-compat']
+      if (!compatConfig) return []
+
+      const baseUrl = compatConfig.baseUrl ?? 'https://api.openai.com'
+      const credResult = await adapter.resolveCredentials()
+      const headers = new Headers()
+      if (credResult.ok) {
+        credResult.credential.applyToRequest(headers)
+      }
+
+      const resp = await fetch(`${baseUrl}/v1/models`, {
+        headers,
+        signal: AbortSignal.timeout(5000),
+      })
+      if (!resp.ok) return []
+
+      const data = (await resp.json()) as {
+        data?: Array<{ id: string; created?: number; owned_by?: string }>
+      }
+      return (data.data ?? []).map((m) => ({
+        id: m.id,
+        object: 'model' as const,
+        created: m.created ?? Math.floor(Date.now() / 1000),
+        owned_by: m.owned_by ?? 'openai-compat',
+      }))
+    }
+
+    // Claude: return well-known model list
+    if (providerId === 'claude') {
+      const knownModels = [
+        'claude-sonnet-4-20250514',
+        'claude-3-5-haiku-20241022',
+        'claude-3-5-sonnet-20241022',
+        'claude-3-opus-20240229',
+      ]
+      return knownModels.map((id) => ({
+        id,
+        object: 'model' as const,
+        created: Math.floor(Date.now() / 1000),
+        owned_by: 'anthropic',
+      }))
+    }
+
+    return []
+  }
+
   async #handleChatCompletion(
     req: Request,
     requestId: string,
-    startTime: number,
+    _startTime: number,
   ): Promise<Response> {
     const config = this.#config
     const deps = this.#deps
@@ -216,7 +306,7 @@ export class ProxyServer {
     if (this.#shuttingDown) {
       const error: ProxyError = {
         kind: 'upstream_error',
-        provider: 'proxy',
+        provider: 'ollama',
         status: 503,
         requestId,
       }
@@ -394,8 +484,8 @@ export class ProxyServer {
       let credential = this.#deps.credentialCache.get(providerId)
       if (!credential) {
         const credentialResult = await provider.resolveCredentials()
-        if (credentialResult.kind === 'error') {
-          throw credentialResult.error
+        if (!credentialResult.ok) {
+          throw new Error(`Credential error for ${providerId}: ${credentialResult.error} — ${credentialResult.hint}`)
         }
         credential = credentialResult.credential
         this.#deps.credentialCache.set(providerId, credential)

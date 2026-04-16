@@ -1,8 +1,3 @@
-interface LatencyBucket {
-  le: string
-  count: number
-}
-
 interface ProviderLatency {
   provider: string
   count: number

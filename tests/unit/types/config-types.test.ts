@@ -4,9 +4,6 @@ import type {
   ServerConfig,
   ProvidersConfig,
   RoutingConfig,
-  LoggingConfig,
-  CircuitBreakerConfig,
-  StreamingConfig,
 } from '@/types/config'
 
 describe('Config types', () => {

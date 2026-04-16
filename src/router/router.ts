@@ -1,17 +1,17 @@
 import { minimatch } from 'minimatch'
-import type { ProviderAdapter, ProviderId } from '@/types/provider'
+import type { ProviderAdapter } from '@/types/provider'
 import type { RoutingConfig } from '@/types/config'
 import type { CircuitBreaker } from '@/router/circuit-breaker'
 
 export class Router {
   readonly #routing: RoutingConfig
-  readonly #adapters: Map<string, ProviderAdapter>
-  readonly #breakers: Map<string, CircuitBreaker>
+  readonly #adapters: ReadonlyMap<string, ProviderAdapter>
+  readonly #breakers: ReadonlyMap<string, CircuitBreaker>
 
   constructor(
     routing: RoutingConfig,
-    adapters: Map<string, ProviderAdapter>,
-    breakers: Map<string, CircuitBreaker>,
+    adapters: ReadonlyMap<string, ProviderAdapter>,
+    breakers: ReadonlyMap<string, CircuitBreaker>,
   ) {
     this.#routing = routing
     this.#adapters = adapters

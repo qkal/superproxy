@@ -24,10 +24,10 @@ program
   .option('-l, --log-level <level>', 'Log level: debug, info, warn, error')
   .action(async (options) => {
     const overrides: Record<string, Record<string, unknown>> = {}
-    if (options.port) overrides.server = { ...(overrides.server ?? {}), port: options.port }
-    if (options.host) overrides.server = { ...(overrides.server ?? {}), host: options.host }
+    if (options.port) overrides.server = { ...overrides.server, port: options.port }
+    if (options.host) overrides.server = { ...overrides.server, host: options.host }
     if (options.logLevel)
-      overrides.logging = { ...(overrides.logging ?? {}), level: options.logLevel }
+      overrides.logging = { ...overrides.logging, level: options.logLevel }
 
     const config = loadConfig({
       configPath: options.config,
@@ -340,7 +340,7 @@ routesCmd
   .option('--json', 'Output as JSON')
   .action(async (options) => {
     const config = loadConfig({ configPath: options.config })
-    const { registry, router } = bootstrapProviders(config)
+    const { registry } = bootstrapProviders(config)
 
     // Build provider states
     const providerStates: Record<
@@ -418,7 +418,7 @@ program
   )
   .action(async (model: string, options: { config?: string; json?: boolean; message?: string }) => {
     const config = loadConfig({ configPath: options.config })
-    const { registry, router } = bootstrapProviders(config)
+    const { router } = bootstrapProviders(config)
 
     const providers = router.resolveAll(model)
     if (providers.length === 0) {
@@ -454,30 +454,41 @@ program
           throw new Error(`Credential error: ${credentialResult.error} - ${credentialResult.hint}`)
         }
 
-        // Transform request
-        const backendRequest = provider.transformRequest({
+        // Transform and send a real request through the pipeline
+        const chatRequest = {
           model,
-          messages: [{ role: 'user', content: testMessage }],
-          stream: false,
-        })
-
-        // For test command, we'll use a simple fetch-based approach
-        // This is a simplified test that checks connectivity
-        const healthResult = await provider.isAvailable()
-        const latencyMs = Date.now() - startTime
-
-        if (healthResult.available) {
-          success = true
-          results.push({
-            provider: providerId,
-            success: true,
-            latencyMs,
-            response: 'Provider is reachable and credentials are valid',
-          })
-          break // Stop at first successful provider
-        } else {
-          throw new Error(healthResult.reason)
+          messages: [{ role: 'user' as const, content: testMessage }],
+          stream: false as const,
         }
+
+        const backendRequest = provider.transformRequest(chatRequest)
+        const abortController = new AbortController()
+        const timeout = setTimeout(() => abortController.abort(), 30000)
+
+        let responseText = ''
+        try {
+          const chunks = provider.streamCompletion(
+            backendRequest,
+            credentialResult.credential,
+            abortController.signal,
+          )
+          for await (const chunk of chunks) {
+            const content = chunk.choices?.[0]?.delta?.content
+            if (content) responseText += content
+          }
+        } finally {
+          clearTimeout(timeout)
+        }
+
+        const latencyMs = Date.now() - startTime
+        success = true
+        results.push({
+          provider: providerId,
+          success: true,
+          latencyMs,
+          response: responseText || '(empty response)',
+        })
+        break // Stop at first successful provider
       } catch (err) {
         const error = err instanceof Error ? err.message : String(err)
         lastError = error

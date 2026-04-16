@@ -1,14 +1,11 @@
 import { describe, it, expect } from 'bun:test'
 import type {
   Role,
-  ChatMessage,
   OpenAIChatRequest,
-  OpenAIChatChunk,
   OpenAIModelList,
   TextContentPart,
   ImageContentPart,
   ToolCall,
-  ToolDefinition,
 } from '@/types/openai'
 
 describe('OpenAI types', () => {

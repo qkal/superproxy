@@ -101,7 +101,6 @@ export function handleCors(req: Request): Response | null {
   }
 
   const origin = req.headers.get('Origin') || '*'
-  const requestedMethod = req.headers.get('Access-Control-Request-Method') || 'GET, POST, OPTIONS'
   const requestedHeaders = req.headers.get('Access-Control-Request-Headers') || ''
 
   const headers = new Headers()
@@ -142,7 +141,11 @@ export function validateContentType(headers: Headers): ProxyError | null {
     return {
       kind: 'request_invalid',
       issues: [
-        { message: 'Content-Type must be application/json', path: ['headers', 'Content-Type'] },
+        {
+          code: 'custom',
+          message: 'Content-Type must be application/json',
+          path: ['headers', 'Content-Type'],
+        },
       ],
     }
   }
