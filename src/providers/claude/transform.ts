@@ -57,7 +57,7 @@ export function transformRequest(req: OpenAIChatRequest): BackendRequestFor<'cla
           type: 'tool_use',
           id: tc.id,
           name: tc.function.name,
-          input: JSON.parse(tc.function.arguments),
+          input: safeParseJson(tc.function.arguments),
         })
       }
       messages.push({ role: 'assistant', content })
@@ -89,6 +89,16 @@ export function transformRequest(req: OpenAIChatRequest): BackendRequestFor<'cla
   }
 
   return { provider: 'claude', body }
+}
+
+function safeParseJson(str: string): unknown {
+  try {
+    return JSON.parse(str)
+  } catch {
+    // Return as-is wrapped in object if not valid JSON, rather than throwing
+    // which would be misclassified as a provider error and trip the circuit breaker
+    return { raw: str }
+  }
 }
 
 function mapContent(content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>): string | AnthropicContentBlock[] {

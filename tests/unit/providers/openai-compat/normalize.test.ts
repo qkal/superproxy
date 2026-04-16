@@ -34,10 +34,9 @@ describe('normalizeChunk (OpenAI-compat)', () => {
     expect(normalizeChunk('  ', 'req-1')).toBeNull()
   })
 
-  it('returns error chunk for malformed JSON', () => {
+  it('returns null for malformed JSON', () => {
     const result = normalizeChunk('not-json', 'req-1')
-    expect(result).not.toBeNull()
-    expect(result!.choices[0].finish_reason).toBe('error')
+    expect(result).toBeNull()
   })
 
   it('uses requestId as fallback when id is missing', () => {

@@ -186,20 +186,11 @@ export class ProxyServer {
       if (!adapter.capabilities.includes('chat')) return []
 
       try {
-        const providerModels = await this.#fetchProviderModels(providerId, adapter)
-        return providerModels.filter((m) => {
-          if (seen.has(m.id)) return false
-          seen.add(m.id)
-          return true
-        })
+        return await this.#fetchProviderModels(providerId, adapter)
       } catch {
-        // If we can't fetch models, return the provider as a fallback model
-        const fallbackId = `${providerId}/default`
-        if (seen.has(fallbackId)) return []
-        seen.add(fallbackId)
         return [
           {
-            id: fallbackId,
+            id: `${providerId}/default`,
             object: 'model' as const,
             created: Math.floor(Date.now() / 1000),
             owned_by: providerId,
@@ -210,7 +201,12 @@ export class ProxyServer {
 
     const results = await Promise.all(fetchPromises)
     for (const batch of results) {
-      models.push(...batch)
+      for (const m of batch) {
+        if (!seen.has(m.id)) {
+          seen.add(m.id)
+          models.push(m)
+        }
+      }
     }
 
     return models

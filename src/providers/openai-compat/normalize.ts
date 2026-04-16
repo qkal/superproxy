@@ -23,18 +23,6 @@ export function normalizeChunk(data: string, requestId: string): OpenAIChatChunk
       ...(parsed.usage ? { usage: parsed.usage as OpenAIChatChunk['usage'] } : {}),
     }
   } catch {
-    return {
-      id: requestId,
-      object: 'chat.completion.chunk',
-      created: Math.floor(Date.now() / 1000),
-      model: 'unknown',
-      choices: [
-        {
-          index: 0,
-          delta: { content: null },
-          finish_reason: 'error',
-        },
-      ],
-    }
+    return null
   }
 }

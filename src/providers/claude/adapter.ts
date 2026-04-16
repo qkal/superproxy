@@ -123,6 +123,20 @@ export class ClaudeAdapter implements ProviderAdapter<'claude'> {
           }
         }
       }
+
+      // Process remaining buffer after stream ends
+      if (buffer.trim()) {
+        const trimmed = buffer.trim()
+        if (trimmed.startsWith('data:')) {
+          const data = trimmed.slice(5).trim()
+          if (currentEvent && data) {
+            const chunk = normalizeEvent(currentEvent, data, requestId, model)
+            if (chunk) {
+              yield chunk
+            }
+          }
+        }
+      }
     } finally {
       reader.releaseLock()
     }
